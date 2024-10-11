@@ -1,30 +1,21 @@
 class Solution {
- public:
-  int smallestChair(vector<vector<int>>& times, int targetFriend) {
-    int nextUnsatChair = 0;
-    priority_queue<int, vector<int>, greater<>> emptyChairs;
-    using P = pair<int, int>;  // (leaving, chair)
-    priority_queue<P, vector<P>, greater<>> occupied;
+public:
+    int smallestChair(vector<vector<int>>& times, int targetFriend) {
+        vector<int> targetTime = times[targetFriend];
+        sort(times.begin(), times.end());
 
-    for (int i = 0; i < times.size(); ++i)
-      times[i].push_back(i);
+        int n = times.size();
+        vector<int> chairTime(n);
 
-    ranges::sort(times);
-
-    for (const vector<int>& time : times) {
-      const int arrival = time[0];
-      const int leaving = time[1];
-      const int i = time[2];
-      while (!occupied.empty() && occupied.top().first <= arrival)
-        emptyChairs.push(occupied.top().second), occupied.pop();
-      if (i == targetFriend)
-        return emptyChairs.empty() ? nextUnsatChair : emptyChairs.top();
-      if (emptyChairs.empty())
-        occupied.emplace(leaving, nextUnsatChair++);
-      else
-        occupied.emplace(leaving, emptyChairs.top()), emptyChairs.pop();
+        for (auto time : times) {
+            for (int i = 0; i < n; i++) {
+                if (chairTime[i] <= time[0]) {
+                    chairTime[i] = time[1];
+                    if (time == targetTime) return i;
+                    break;
+                }
+            }
+        }
+        return 0;
     }
-
-    throw;
-  }
 };
