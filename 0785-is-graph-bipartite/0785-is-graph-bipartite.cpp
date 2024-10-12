@@ -1,34 +1,34 @@
+enum class Color { kWhite, kRed, kGreen };
+
 class Solution {
-public:
-    bool isBipartite(vector<vector<int>>& graph) {
-        int n = graph.size();
-        vector<int> colors(n, 0);
-        queue<int> q;
-        
-        for (int i = 0; i < n; i++) {
-            if (colors[i]) continue;
-            
-            colors[i] = 1;
-            q.push(i);
-            
-            while (!q.empty()) {
-                int temp = q.front();
-                
-                for (auto neighbor : graph[temp]) {
-                    
-					// Color neighbor with opposite color
-                    if (!colors[neighbor]){
-                        colors[neighbor] = -colors[temp];
-                        q.push(neighbor);
-                    }
-                    
-					// If the neighbor has the same color - can't bipartite.
-                    else if (colors[neighbor] == colors[temp]) 
-                        return false;
-                }
-                q.pop();
+ public:
+  bool isBipartite(vector<vector<int>>& graph) {
+    vector<Color> colors(graph.size(), Color::kWhite);
+
+    for (int i = 0; i < graph.size(); ++i) {
+      // This node has been colored, so do nothing.
+      if (colors[i] != Color::kWhite)
+        continue;
+      // Always paint red for a white node.
+      colors[i] = Color::kRed;
+      // BFS.
+      queue<int> q{{i}};
+      while (!q.empty())
+        for (int sz = q.size(); sz > 0; --sz) {
+          const int u = q.front();
+          q.pop();
+          for (const int v : graph[u]) {
+            if (colors[v] == colors[u])
+              return false;
+            if (colors[v] == Color::kWhite) {
+              colors[v] =
+                  colors[u] == Color::kRed ? Color::kGreen : Color::kRed;
+              q.push(v);
             }
+          }
         }
-        return true;
     }
+
+    return true;
+  }
 };
