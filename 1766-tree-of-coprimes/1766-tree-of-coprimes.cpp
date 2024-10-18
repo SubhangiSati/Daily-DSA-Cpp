@@ -1,48 +1,42 @@
 class Solution {
- public:
-  vector<int> getCoprimes(vector<int>& nums, vector<vector<int>>& edges) {
-    vector<int> ans(nums.size(), -1);
-    vector<vector<int>> tree(nums.size());
-    // stacks[i] := (node, depth)s of nodes with value i
-    vector<stack<pair<int, int>>> stacks(kMax + 1);
-
-    for (const vector<int> edge : edges) {
-      const int u = edge[0];
-      const int v = edge[1];
-      tree[u].push_back(v);
-      tree[v].push_back(u);
+public:
+    vector<int> getCoprimes(vector<int>& nums, vector<vector<int>>& edges) {
+        int n = nums.size();
+        vector<vector<int>> g(n);
+        vector<vector<int>> f(51);
+        vector<stack<pair<int, int>>> stks(51);
+        for (auto& e : edges) {
+            int u = e[0], v = e[1];
+            g[u].emplace_back(v);
+            g[v].emplace_back(u);
+        }
+        for (int i = 1; i < 51; ++i) {
+            for (int j = 1; j < 51; ++j) {
+                if (__gcd(i, j) == 1) {
+                    f[i].emplace_back(j);
+                }
+            }
+        }
+        vector<int> ans(n);
+        function<void(int, int, int)> dfs = [&](int i, int fa, int depth) {
+            int t = -1, k = -1;
+            for (int v : f[nums[i]]) {
+                auto& stk = stks[v];
+                if (!stk.empty() && stk.top().second > k) {
+                    t = stk.top().first;
+                    k = stk.top().second;
+                }
+            }
+            ans[i] = t;
+            for (int j : g[i]) {
+                if (j != fa) {
+                    stks[nums[i]].push({i, depth});
+                    dfs(j, i, depth + 1);
+                    stks[nums[i]].pop();
+                }
+            }
+        };
+        dfs(0, -1, 0);
+        return ans;
     }
-
-    dfs(tree, 0, /*prev=*/-1, /*depth=*/0, nums, stacks, ans);
-    return ans;
-  }
-
- private:
-  static constexpr int kMax = 50;
-
-  void dfs(const vector<vector<int>>& tree, int u, int prev, int depth,
-           const vector<int>& nums, vector<stack<pair<int, int>>>& stacks,
-           vector<int>& ans) {
-    ans[u] = getAncestor(u, stacks, nums);
-    stacks[nums[u]].push({u, depth});
-
-    for (const int v : tree[u])
-      if (v != prev)
-        dfs(tree, v, u, depth + 1, nums, stacks, ans);
-
-    stacks[nums[u]].pop();
-  }
-
-  int getAncestor(int u, const vector<stack<pair<int, int>>>& stacks,
-                  const vector<int>& nums) {
-    int maxNode = -1;
-    int maxDepth = -1;
-    for (int i = 1; i <= kMax; ++i)
-      if (!stacks[i].empty() && stacks[i].top().second > maxDepth &&
-          __gcd(nums[u], i) == 1) {
-        maxNode = stacks[i].top().first;
-        maxDepth = stacks[i].top().second;
-      }
-    return maxNode;
-  }
 };
