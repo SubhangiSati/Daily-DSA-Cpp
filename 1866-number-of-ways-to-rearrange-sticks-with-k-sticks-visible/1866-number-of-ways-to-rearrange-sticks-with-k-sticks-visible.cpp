@@ -1,18 +1,15 @@
 class Solution {
- public:
-  long rearrangeSticks(int n, int k) {
-    if (n == k)
-      return 1;
-    if (k == 0)
-      return 0;
-    if (dp[n][k])
-      return dp[n][k];
-    return dp[n][k] = (rearrangeSticks(n - 1, k - 1) +
-                       rearrangeSticks(n - 1, k) * (n - 1)) %
-                      kMod;
-  }
-
- private:
-  static constexpr int kMod = 1'000'000'007;
-  vector<vector<int>> dp = vector<vector<int>>(1001, vector<int>(1001));
+public:
+    int rearrangeSticks(int n, int k) {
+        const int mod = 1e9 + 7;
+        int f[n + 1][k + 1];
+        memset(f, 0, sizeof(f));
+        f[0][0] = 1;
+        for (int i = 1; i <= n; ++i) {
+            for (int j = 1; j <= k; ++j) {
+                f[i][j] = (f[i - 1][j - 1] + (i - 1LL) * f[i - 1][j]) % mod;
+            }
+        }
+        return f[n][k];
+    }
 };
