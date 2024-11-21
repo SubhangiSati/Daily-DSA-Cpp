@@ -1,35 +1,37 @@
-class Solution {
- public:
-  // Same as 3029. Minimum Time to Revert Word to Initial State I
-  int minimumTimeToInitialState(string word, int k) {
-    const int n = word.length();
-    const int maxOps = (n - 1) / k + 1;
-    const vector<int> z = zFunction(word);
-    for (int ans = 1; ans < maxOps; ++ans)
-      if (z[ans * k] >= n - ans * k)
-        return ans;
-    return maxOps;
-  }
+class Hashing {
+private:
+    vector<long long> p;
+    vector<long long> h;
+    long long mod;
 
-  // Returns the z array, where z[i] is the length of the longest prefix of
-  // s[i..n) which is also a prefix of s.
-  //
-  // https://cp-algorithms.com/string/z-function.html#implementation
-  vector<int> zFunction(const string& s) {
-    const int n = s.length();
-    vector<int> z(n);
-    int l = 0;
-    int r = 0;
-    for (int i = 1; i < n; ++i) {
-      if (i < r)
-        z[i] = min(r - i, z[i - l]);
-      while (i + z[i] < n && s[z[i]] == s[i + z[i]])
-        ++z[i];
-      if (i + z[i] > r) {
-        l = i;
-        r = i + z[i];
-      }
+public:
+    Hashing(string word, long long base, int mod) {
+        int n = word.size();
+        p.resize(n + 1);
+        h.resize(n + 1);
+        p[0] = 1;
+        this->mod = mod;
+        for (int i = 1; i <= n; i++) {
+            p[i] = (p[i - 1] * base) % mod;
+            h[i] = (h[i - 1] * base + word[i - 1] - 'a') % mod;
+        }
     }
-    return z;
-  }
+
+    long long query(int l, int r) {
+        return (h[r] - h[l - 1] * p[r - l + 1] % mod + mod) % mod;
+    }
+};
+
+class Solution {
+public:
+    int minimumTimeToInitialState(string word, int k) {
+        Hashing hashing(word, 13331, 998244353);
+        int n = word.size();
+        for (int i = k; i < n; i += k) {
+            if (hashing.query(1, n - i) == hashing.query(i + 1, n)) {
+                return i / k;
+            }
+        }
+        return (n + k - 1) / k;
+    }
 };
