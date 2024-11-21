@@ -1,63 +1,29 @@
+int ps[1000001];
 class Solution {
- public:
-  // Same as 3034. Number of Subarrays That Match a Pattern I
-  int countMatchingSubarrays(vector<int>& nums, vector<int>& pattern) {
-    const vector<int> numsPattern = getNumsPattern(nums);
-    return kmp(numsPattern, pattern);
-  }
-
- private:
-  int getNum(int a, int b) {
-    if (a < b)
-      return 1;
-    if (a > b)
-      return -1;
-    return 0;
-  }
-
-  vector<int> getNumsPattern(const vector<int>& nums) {
-    vector<int> numsPattern;
-    for (int i = 1; i < nums.size(); ++i)
-      numsPattern.push_back(getNum(nums[i - 1], nums[i]));
-    return numsPattern;
-  }
-
-  // Returns the number of occurrences of the pattern in `nums`.
-  int kmp(const vector<int>& nums, const vector<int>& pattern) {
-    const vector<int> lps = getLPS(pattern);
-    int res = 0;
-    int i = 0;  // nums' index
-    int j = 0;  // pattern's index
-    while (i < nums.size()) {
-      if (nums[i] == pattern[j]) {
-        ++i;
-        ++j;
-        if (j == pattern.size()) {
-          ++res;
-          j = lps[j - 1];
+public:
+    int countMatchingSubarrays(vector<int>& nums, vector<int>& pattern) {
+        int N = size(pattern);
+        ps[0] = -1;
+        ps[1] = 0;
+        for (int i = 2, p = 0; i <= N; ++i) {
+            int x = pattern[i - 1];
+            while (p >= 0 && pattern[p] != x) {
+                p = ps[p];
+            }
+            ps[i] = ++p;
         }
-      }
-      // Mismatch after j matches.
-      else if (j > 0) {
-        // Don't match lps[0..lps[j - 1]] since they will match anyway.
-        j = lps[j - 1];
-      } else {
-        ++i;
-      }
-    }
-    return res;
-  }
 
-  // Returns the lps array, where lps[i] is the length of the longest prefix of
-  // pattern[0..i] which is also a suffix of this substring.
-  vector<int> getLPS(const vector<int>& pattern) {
-    vector<int> lps(pattern.size());
-    for (int i = 1, j = 0; i < pattern.size(); ++i) {
-      while (j > 0 && pattern[j] != pattern[i])
-        j = lps[j - 1];
-      if (pattern[i] == pattern[j])
-        lps[i] = ++j;
+        int res = 0;
+        for (int i = 1, p = 0, M = size(nums); i < M; ++i) {
+            int t = nums[i] - nums[i - 1];
+            t = (t > 0) - (t < 0);
+            while (p >= 0 && pattern[p] != t) {
+                p = ps[p];
+            }
+            if (++p == N) {
+                ++res, p = ps[p];
+            }
+        }
+        return res;
     }
-    return lps;
-  }
 };
