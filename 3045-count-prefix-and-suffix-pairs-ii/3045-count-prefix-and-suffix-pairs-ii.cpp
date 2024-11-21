@@ -1,43 +1,30 @@
-struct TrieNode {
-  unordered_map<int, shared_ptr<TrieNode>> children;
-  int count = 0;
-};
+class Node {
+public:
+    unordered_map<int, Node*> children;
+    int cnt;
 
-class Trie {
- public:
-  int insert(const string& word) {
-    const int n = word.length();
-    int count = 0;
-    shared_ptr<TrieNode> node = root;
-    for (int i = 0; i < n; ++i) {
-      const int j = hash(word[i], word[n - 1 - i]);
-      if (node->children[j] == nullptr)
-        node->children[j] = make_shared<TrieNode>();
-      node = node->children[j];
-      count += node->count;
-    }
-    ++node->count;
-    return count;
-  }
-
- private:
-  shared_ptr<TrieNode> root = make_shared<TrieNode>();
-
-  static int hash(char prefix, char suffix) {
-    return 26 * (prefix - 'a') + (suffix - 'a');
-  }
+    Node()
+        : cnt(0) {}
 };
 
 class Solution {
- public:
-  // Same as 3042. Count Prefix and Suffix Pairs I
-  long long countPrefixSuffixPairs(vector<string>& words) {
-    long ans = 0;
-    Trie trie;
-
-    for (const string& word : words)
-      ans += trie.insert(word);
-
-    return ans;
-  }
+public:
+    long long countPrefixSuffixPairs(vector<string>& words) {
+        long long ans = 0;
+        Node* trie = new Node();
+        for (const string& s : words) {
+            Node* node = trie;
+            int m = s.length();
+            for (int i = 0; i < m; ++i) {
+                int p = s[i] * 32 + s[m - i - 1];
+                if (node->children.find(p) == node->children.end()) {
+                    node->children[p] = new Node();
+                }
+                node = node->children[p];
+                ans += node->cnt;
+            }
+            ++node->cnt;
+        }
+        return ans;
+    }
 };
