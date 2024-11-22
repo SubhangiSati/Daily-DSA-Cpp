@@ -1,129 +1,128 @@
-struct SegmentTreeNode {
-  int lo;
-  int hi;
-  std::unique_ptr<SegmentTreeNode> left;
-  std::unique_ptr<SegmentTreeNode> right;
-  int mx;
-  long sum;
-  SegmentTreeNode(int lo, int hi, std::unique_ptr<SegmentTreeNode>&& left,
-                  std::unique_ptr<SegmentTreeNode>&& right, int mx, long sum)
-      : lo(lo),
-        hi(hi),
-        left(std::move(left)),
-        right(std::move(right)),
-        mx(mx),
-        sum(sum) {}
+class Node {
+public:
+    int l, r;
+    long s, mx;
 };
 
 class SegmentTree {
- public:
-  explicit SegmentTree(int n, int m) : m(m), root(std::move(build(0, n - 1))) {}
-
-  vector<int> maxRange(int k, int maxRow) {
-    return maxRange(root, k, maxRow);
-  }
-
-  long sumRange(int maxRow) {
-    return sumRange(root, 0, maxRow);
-  }
-
-  // Substracts k from the seats row.
-  void substract(int row, int k) {
-    substract(root, row, k);
-  }
-
- private:
-  const int m;
-  std::unique_ptr<SegmentTreeNode> root;
-
-  std::unique_ptr<SegmentTreeNode> build(int l, int r) {
-    if (l == r)
-      return make_unique<SegmentTreeNode>(l, r, nullptr, nullptr, m, m);
-    const int mid = (l + r) / 2;
-    std::unique_ptr<SegmentTreeNode> left = build(l, mid);
-    std::unique_ptr<SegmentTreeNode> right = build(mid + 1, r);
-    return make_unique<SegmentTreeNode>(l, r, std::move(left), std::move(right),
-                                        max(left->mx, right->mx),
-                                        left->sum + right->sum);
-  }
-
-  vector<int> maxRange(std::unique_ptr<SegmentTreeNode>& root, int k,
-                       int maxRow) {
-    if (root->lo == root->hi) {
-      if (root->sum < k || root->lo > maxRow)
-        return {};
-      return {root->lo, m - static_cast<int>(root->sum)};  // {row, col}
+public:
+    SegmentTree(int n, int m) {
+        this->m = m;
+        tr.resize(n << 2);
+        for (int i = 0; i < n << 2; ++i) {
+            tr[i] = new Node();
+        }
+        build(1, 1, n);
     }
-    // Greedily search the left subtree
-    if (root->left->mx >= k)
-      return maxRange(root->left, k, maxRow);
-    return maxRange(root->right, k, maxRow);
-  }
 
-  long sumRange(std::unique_ptr<SegmentTreeNode>& root, int i, int j) {
-    if (root->lo == i && root->hi == j)
-      return root->sum;
-    const int mid = (root->lo + root->hi) / 2;
-    if (j <= mid)
-      return sumRange(root->left, i, j);
-    if (i > mid)
-      return sumRange(root->right, i, j);
-    return sumRange(root->left, i, mid) + sumRange(root->right, mid + 1, j);
-  }
-
-  void substract(std::unique_ptr<SegmentTreeNode>& root, int row, int k) {
-    if (root == nullptr)
-      return;
-    if (root->lo == root->hi && root->hi == row) {
-      root->mx -= k;
-      root->sum -= k;
-      return;
+    void modify(int u, int x, int v) {
+        if (tr[u]->l == x && tr[u]->r == x) {
+            tr[u]->s = tr[u]->mx = v;
+            return;
+        }
+        int mid = (tr[u]->l + tr[u]->r) >> 1;
+        if (x <= mid) {
+            modify(u << 1, x, v);
+        } else {
+            modify(u << 1 | 1, x, v);
+        }
+        pushup(u);
     }
-    const int mid = (root->lo + root->hi) / 2;
-    if (row <= mid)
-      substract(root->left, row, k);
-    else
-      substract(root->right, row, k);
-    root->mx = max(root->left->mx, root->right->mx);
-    root->sum = root->left->sum + root->right->sum;
-  }
+
+    long querySum(int u, int l, int r) {
+        if (tr[u]->l >= l && tr[u]->r <= r) {
+            return tr[u]->s;
+        }
+        int mid = (tr[u]->l + tr[u]->r) >> 1;
+        long v = 0;
+        if (l <= mid) {
+            v += querySum(u << 1, l, r);
+        }
+        if (r > mid) {
+            v += querySum(u << 1 | 1, l, r);
+        }
+        return v;
+    }
+
+    int queryIdx(int u, int l, int r, int k) {
+        if (tr[u]->mx < k) {
+            return 0;
+        }
+        if (tr[u]->l == tr[u]->r) {
+            return tr[u]->l;
+        }
+        int mid = (tr[u]->l + tr[u]->r) >> 1;
+        if (tr[u << 1]->mx >= k) {
+            return queryIdx(u << 1, l, r, k);
+        }
+        if (r > mid) {
+            return queryIdx(u << 1 | 1, l, r, k);
+        }
+        return 0;
+    }
+
+private:
+    vector<Node*> tr;
+    int m;
+
+    void build(int u, int l, int r) {
+        tr[u]->l = l;
+        tr[u]->r = r;
+        if (l == r) {
+            tr[u]->s = m;
+            tr[u]->mx = m;
+            return;
+        }
+        int mid = (l + r) >> 1;
+        build(u << 1, l, mid);
+        build(u << 1 | 1, mid + 1, r);
+        pushup(u);
+    }
+
+    void pushup(int u) {
+        tr[u]->s = tr[u << 1]->s + tr[u << 1 | 1]->s;
+        tr[u]->mx = max(tr[u << 1]->mx, tr[u << 1 | 1]->mx);
+    }
 };
 
 class BookMyShow {
- public:
-  BookMyShow(int n, int m) : tree(n, m), seats(n, m) {}
-
-  vector<int> gather(int k, int maxRow) {
-    const vector<int> res = tree.maxRange(k, maxRow);
-    if (res.size() == 2) {
-      const int row = res[0];
-      tree.substract(row, k);
-      seats[row] -= k;
+public:
+    BookMyShow(int n, int m) {
+        this->n = n;
+        this->m = m;
+        tree = new SegmentTree(n, m);
     }
-    return res;
-  }
 
-  bool scatter(int k, int maxRow) {
-    if (tree.sumRange(maxRow) < k)
-      return false;
+    vector<int> gather(int k, int maxRow) {
+        ++maxRow;
+        int i = tree->queryIdx(1, 1, maxRow, k);
+        if (i == 0) {
+            return {};
+        }
+        long s = tree->querySum(1, i, i);
+        tree->modify(1, i, s - k);
+        return {i - 1, (int) (m - s)};
+    }
 
-    while (k > 0)
-      if (seats[minVacantRow] >= k) {
-        tree.substract(minVacantRow, k);
-        seats[minVacantRow] -= k;
-        k = 0;
-      } else {
-        tree.substract(minVacantRow, seats[minVacantRow]);
-        k -= seats[minVacantRow];
-        seats[minVacantRow] = 0;
-        ++minVacantRow;
-      }
+    bool scatter(int k, int maxRow) {
+        ++maxRow;
+        if (tree->querySum(1, 1, maxRow) < k) {
+            return false;
+        }
+        int i = tree->queryIdx(1, 1, maxRow, 1);
+        for (int j = i; j <= n; ++j) {
+            long s = tree->querySum(1, j, j);
+            if (s >= k) {
+                tree->modify(1, j, s - k);
+                return true;
+            }
+            k -= s;
+            tree->modify(1, j, 0);
+        }
+        return true;
+    }
 
-    return true;
-  }
-
- private:
-  SegmentTree tree;
-  vector<int> seats;  // the remaining seats at each row
-  int minVacantRow = 0;
+private:
+    SegmentTree* tree;
+    int m, n;
 };
