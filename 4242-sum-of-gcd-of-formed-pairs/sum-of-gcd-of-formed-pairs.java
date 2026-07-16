@@ -1,30 +1,30 @@
 class Solution {
-    public long gcdSum(int[] nums) {
-        int n = nums.length;
-        int[] prefixGcd = new int[n];
-        int mx = 0;
-
-        for (int i = 0; i < n; i++) {
-            int x = nums[i];
-            mx = Math.max(mx, x);
-            prefixGcd[i] = gcd(x, mx);
+    public long gcdSum(int[] arr){
+        int [] prefix = new int[arr.length];
+        int max = 0;
+        for (int i = 0; i< arr.length; i++) {
+            if ( arr[i] > max) {
+                max = arr[i];
+            }
+            prefix[i] = gcd(max, arr[i]);
         }
-
-        Arrays.sort(prefixGcd);
-
-        long ans = 0;
-        for (int i = 0; i < n / 2; i++) {
-            ans += gcd(prefixGcd[i], prefixGcd[n - i - 1]);
+        Arrays.sort(prefix);
+        int i = 0;
+        int j = arr.length - 1;
+        long sum = 0;
+        while (i < j){
+            sum += gcd(prefix[i], prefix[j]);
+            i++;
+            j--;
         }
-
-        return ans;
+        return sum;
     }
+    public int gcd(int a, int b) {
+        while(b!=0){
+            int temp = b;
+            b = a % b;
+            a = temp;
 
-    private int gcd(int a, int b) {
-        while (b != 0) {
-            int t = a % b;
-            a = b;
-            b = t;
         }
         return a;
     }
