@@ -1,17 +1,27 @@
 class Solution {
-  public int missingInteger(int[] nums) {
-    Set<Integer> numsSet = Arrays.stream(nums).boxed().collect(Collectors.toSet());
-    int ans = nums[0];
+    public int missingInteger(int[] nums) {
+        int sum = nums[0];
+        for (int i = 1; i < nums.length; i++) {
+            if (nums[i] == nums[i - 1] + 1) {
+                sum += nums[i];
+            } else {
+                break;
+            }
+        }
+        int x = sum;
+        while (true) {
+            boolean found = false;
 
-    for (int i = 1; i < nums.length; ++i) {
-      if (nums[i] != nums[i - 1] + 1)
-        break;
-      ans += nums[i];
+            for (int num : nums) {
+                if (num == x) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return x;
+            }
+            x++;
+        }
     }
-
-    while (numsSet.contains(ans))
-      ++ans;
-
-    return ans;
-  }
 }
