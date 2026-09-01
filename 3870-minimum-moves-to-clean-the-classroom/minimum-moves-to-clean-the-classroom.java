@@ -1,58 +1,105 @@
 class Solution {
+    private static final int[][] STEP = {
+        {1, 0}, {-1, 0}, {0, 1}, {0, -1}
+    };
+
+    private static final class State {
+        final int cell;
+        final int cleaned;
+        final int power;
+
+        State(int cell, int cleaned, int power) {
+            this.cell = cell;
+            this.cleaned = cleaned;
+            this.power = power;
+        }
+    }
+
     public int minMoves(String[] classroom, int energy) {
-        int m = classroom.length, n = classroom[0].length();
-        int[][] d = new int[m][n];
-        int x = 0, y = 0, cnt = 0;
-        for (int i = 0; i < m; i++) {
-            String row = classroom[i];
-            for (int j = 0; j < n; j++) {
-                char c = row.charAt(j);
-                if (c == 'S') {
-                    x = i;
-                    y = j;
-                } else if (c == 'L') {
-                    d[i][j] = cnt;
-                    cnt++;
+        final int height = classroom.length;
+        final int width = classroom[0].length();
+        final int cells = height * width;
+
+        char[][] room = new char[height][];
+        int[] litterBit = new int[cells];
+
+        int start = -1;
+        int litterCount = 0;
+
+        for (int r = 0; r < height; r++) {
+            room[r] = classroom[r].toCharArray();
+
+            for (int c = 0; c < width; c++) {
+                int id = r * width + c;
+
+                switch (room[r][c]) {
+                    case 'S' -> start = id;
+                    case 'L' -> litterBit[id] = 1 << litterCount++;
+                    default -> { }
                 }
             }
         }
-        if (cnt == 0) {
-            return 0;
+
+        final int allClean = (1 << litterCount) - 1;
+        int[][] strongest = new int[1 << litterCount][cells];
+
+        for (int[] row : strongest) {
+            Arrays.fill(row, -1);
         }
-        boolean[][][][] vis = new boolean[m][n][energy + 1][1 << cnt];
-        List<int[]> q = new ArrayList<>();
-        q.add(new int[] {x, y, energy, (1 << cnt) - 1});
-        vis[x][y][energy][(1 << cnt) - 1] = true;
-        int[] dirs = {-1, 0, 1, 0, -1};
-        int ans = 0;
-        while (!q.isEmpty()) {
-            List<int[]> t = q;
-            q = new ArrayList<>();
-            for (int[] state : t) {
-                int i = state[0], j = state[1], curEnergy = state[2], mask = state[3];
-                if (mask == 0) {
-                    return ans;
+
+        ArrayDeque<State> frontier = new ArrayDeque<>();
+
+        frontier.addLast(new State(start, 0, energy));
+        strongest[0][start] = energy;
+
+        int moves = 0;
+
+        while (!frontier.isEmpty()) {
+            int levelSize = frontier.size();
+
+            while (levelSize-- > 0) {
+                State cur = frontier.removeFirst();
+
+                if (cur.cleaned == allClean) {
+                    return moves;
                 }
-                if (curEnergy <= 0) {
+                if (cur.power < strongest[cur.cleaned][cur.cell]
+                        || cur.power == 0) {
                     continue;
                 }
-                for (int k = 0; k < 4; k++) {
-                    int nx = i + dirs[k], ny = j + dirs[k + 1];
-                    if (nx >= 0 && nx < m && ny >= 0 && ny < n && classroom[nx].charAt(ny) != 'X') {
-                        int nxtEnergy = classroom[nx].charAt(ny) == 'R' ? energy : curEnergy - 1;
-                        int nxtMask = mask;
-                        if (classroom[nx].charAt(ny) == 'L') {
-                            nxtMask &= ~(1 << d[nx][ny]);
-                        }
-                        if (!vis[nx][ny][nxtEnergy][nxtMask]) {
-                            vis[nx][ny][nxtEnergy][nxtMask] = true;
-                            q.add(new int[] {nx, ny, nxtEnergy, nxtMask});
-                        }
+                int r = cur.cell / width;
+                int c = cur.cell % width;
+                for (int[] d : STEP) {
+                    int nr = r + d[0];
+                    int nc = c + d[1];
+                    if (!inside(nr, nc, height, width)
+                            || room[nr][nc] == 'X') {
+                        continue;
                     }
+                    int nextCell = nr * width + nc;
+                    int nextMask = cur.cleaned | litterBit[nextCell];
+                    int nextPower = room[nr][nc] == 'R' ? energy : cur.power - 1;
+                    if (nextPower <= strongest[nextMask][nextCell]) {
+                        continue;
+                    }
+                    strongest[nextMask][nextCell] = nextPower;
+
+                    frontier.addLast(
+                            new State(nextCell, nextMask, nextPower)
+                    );
                 }
             }
-            ans++;
+
+            moves++;
         }
         return -1;
+    }
+
+    private static boolean inside(
+            int r, int c, int height, int width) {
+        return r >= 0
+                && r < height
+                && c >= 0
+                && c < width;
     }
 }
