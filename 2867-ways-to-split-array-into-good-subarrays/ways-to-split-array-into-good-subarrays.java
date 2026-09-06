@@ -1,19 +1,27 @@
 class Solution {
-  public int numberOfGoodSubarraySplits(int[] nums) {
-    if (Arrays.stream(nums).filter(num -> num == 1).count() == 0)
-      return 0;
-
-    final int MOD = 1_000_000_007;
-    int prev = -1;
-    int ans = 1;
-
-    for (int i = 0; i < nums.length; ++i)
-      if (nums[i] == 1) {
-        if (prev != -1)
-          ans = (int) ((long) ans * (i - prev) % MOD);
-        prev = i;
-      }
-
-    return ans;
-  }
+    public int numberOfGoodSubarraySplits(int[] nums) {
+      int MOD = 1_000_000_007;
+      int count = 0;
+      int ways = 1;
+      int n = nums.length;
+      int e = 0, f = n - 1;
+      while (nums[e] == 0) {
+        e++;
+        if (e == n) return 0;
+      }  
+      while (nums[f] == 0) 
+        f--;
+        for (int i = e + 1; i < f; i++) {
+            if (nums[i] == 0) count++;
+                else {
+                    if (count > 0) {
+                        ways = (int) ((long) ways * (count + 1) % MOD);
+                        count = 0;
+                    }
+                }
+        }
+        if (count > 0)
+            ways = (int) ((long) ways * (count + 1) % MOD);
+        return ways;
+    }
 }
