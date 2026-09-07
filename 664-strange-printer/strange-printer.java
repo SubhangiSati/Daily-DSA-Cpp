@@ -1,22 +1,34 @@
 class Solution {
     public int strangePrinter(String s) {
-        final int inf = 1 << 30;
-        int n = s.length();
-        int[][] f = new int[n][n];
-        for (var g : f)
-            Arrays.fill(g, inf);
-        for (int i = n - 1; i >= 0; --i) {
-            f[i][i] = 1;
-            for (int j = i + 1; j < n; ++j) {
-                if (s.charAt(i) == s.charAt(j))
-                    f[i][j] = f[i][j - 1];
-                else {
-                    for (int k = i; k < j; ++k) {
-                        f[i][j] = Math.min(f[i][j], f[i][k] + f[k + 1][j]);
-                    }
-                }
+        int len = s.length();
+        int[] compressed = new int[len];
+        int index = 0;
+        char prev = s.charAt(0);
+        for (char ch : s.toCharArray()) {
+            if (prev != ch) {
+                compressed[index++] = prev - 'a';
+                prev = ch;
             }
         }
-        return f[0][n - 1];
+        compressed[index] = prev - 'a';
+
+        Integer[][] dp = new Integer[index + 1][index + 1];
+        return helper(compressed, 0, index, dp);
+    }
+
+    private int helper(int[] arr, int s, int e, Integer[][] dp) {
+        if (s > e)
+            return 0;
+        if (dp[s][e] != null)
+            return dp[s][e];
+        int minPts = 1 + helper(arr, s + 1, e, dp);
+        for (int m = s + 1; m <= e; m++) {
+            if (arr[s] == arr[m]) {
+                int currPts = helper(arr, s + 1, m - 1, dp) + helper(arr, m, e, dp);
+                minPts = Math.min(minPts, currPts);
+            }
+        }
+
+        return dp[s][e] = minPts;
     }
 }
