@@ -1,25 +1,33 @@
 class Solution {
-    private Integer[][] f;
-    private int[] rods;
-    private int n;
-
     public int tallestBillboard(int[] rods) {
-        int s = 0;
-        for (int x : rods) 
-            s += x;
-        n = rods.length;
-        this.rods = rods;
-        f = new Integer[n][s + 1];
-        return dfs(0, 0);
-    }
-
-    private int dfs(int i, int j) {
-        if (i >= n) 
-            return j == 0 ? 0 : -(1 << 30);
-        if (f[i][j] != null) 
-            return f[i][j];
-        int ans = Math.max(dfs(i + 1, j), dfs(i + 1, j + rods[i]));
-        ans = Math.max(ans, dfs(i + 1, Math.abs(rods[i] - j)) + Math.min(j, rods[i]));
-        return f[i][j] = ans;
+        int m = 1;
+        for (int n : rods) m += n;
+        int n = rods.length;
+        int[] dp1 = new int[m];
+        int[] dp2 = new int[m];
+        for (int i = 1; i < m; i++) dp2[i] = Integer.MIN_VALUE;
+        dp2[rods[0]] = 0;
+        for (int i = 1; i < n; i++) {
+            int[] temp = dp1;
+            dp1 = dp2;
+            dp2 = temp;
+            int rod = rods[i];
+            for (int j = 0; j < m; j++) 
+                dp2[j] = dp1[j];
+            for (int j = 0; j < m; j++) {
+                if (dp1[j] == Integer.MIN_VALUE) continue;
+                int newDiff = j + rod;
+                int newShortest = dp1[j];
+                dp2[newDiff] = Math.max(dp2[newDiff], newShortest);
+                newDiff = j - rod;
+                newShortest = dp1[j] + rod;
+                if (newDiff < 0) {
+                    newShortest += newDiff;
+                    newDiff *= -1;
+                }
+                dp2[newDiff] = Math.max(dp2[newDiff], newShortest);
+            }
+        }
+        return dp2[0];
     }
 }
