@@ -1,20 +1,24 @@
 class Solution {
     public int longestAwesome(String s) {
-        int[] d = new int[1024];
-        int st = 0, ans = 1;
-        Arrays.fill(d, -1);
-        d[0] = 0;
-        for (int i = 1; i <= s.length(); ++i) {
-            int v = s.charAt(i - 1) - '0';
-            st ^= 1 << v;
-            if (d[st] >= 0) 
-                ans = Math.max(ans, i - d[st]);
-            else 
-                d[st] = i;
-            for (v = 0; v < 10; ++v) {
-                if (d[st ^ (1 << v)] >= 0) 
-                    ans = Math.max(ans, i - d[st ^ (1 << v)]);
+        int n = s.length();
+        int[] dp = new int[1 << 10]; 
+        for (int i = 0; i < (1 << 10); i++) 
+            dp[i] = n;
+        dp[0] = -1; 
+
+        int ans = 1; 
+        int currentMask = 0; 
+
+        for (int i = 0; i < n; i++) {
+            int digit = s.charAt(i) - '0';
+            currentMask ^= (1 << digit); 
+            ans = Math.max(ans, i - dp[currentMask]);
+            for (int k = 0; k < 10; k++) {
+                int targetMask = currentMask ^ (1 << k);
+                ans = Math.max(ans, i - dp[targetMask]);
             }
+            if (dp[currentMask] == n) 
+                dp[currentMask] = i;
         }
         return ans;
     }
