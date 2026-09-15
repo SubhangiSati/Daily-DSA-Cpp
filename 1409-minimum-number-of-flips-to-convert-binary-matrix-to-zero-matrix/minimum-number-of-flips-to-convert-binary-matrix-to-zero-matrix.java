@@ -1,45 +1,37 @@
 class Solution {
+    int n,m;
     public int minFlips(int[][] mat) {
-        int m = mat.length, n = mat[0].length;
-        int state = 0;
-        for (int i = 0; i < m; ++i) {
-            for (int j = 0; j < n; ++j) {
-                if (mat[i][j] == 1) 
-                    state |= 1 << (i * n + j);
+        n=mat.length;m=mat[0].length;
+        int ans=sol(mat,0,0,0);
+        return ans==Integer.MAX_VALUE?-1:ans;
+    }
+    public int sol(int[][] mat,int i,int j,int c){
+        if(j==m){
+            j=0;
+            i++;
+        }
+        if(i==n){
+            return isValid(mat)?c:Integer.MAX_VALUE;
+        }
+        int x=sol(mat,i,j+1,c);
+        flip(mat,i,j);
+        int y=sol(mat,i,j+1,c+1);
+        flip(mat,i,j);
+        return Math.min(x,y);
+    }
+    public boolean isValid(int[][] mat){
+        for(int i=0;i<n;i++){
+            for(int j=0;j<m;j++){
+                if(mat[i][j]==1) return false;
             }
         }
-        Deque<Integer> q = new ArrayDeque<>();
-        q.offer(state);
-        Set<Integer> vis = new HashSet<>();
-        vis.add(state);
-        int ans = 0;
-        int[] dirs = {0, -1, 0, 1, 0, 0};
-        while (!q.isEmpty()) {
-            for (int t = q.size(); t > 0; --t) {
-                state = q.poll();
-                if (state == 0) 
-                    return ans;
-                for (int i = 0; i < m; ++i) {
-                    for (int j = 0; j < n; ++j) {
-                        int nxt = state;
-                        for (int k = 0; k < 5; ++k) {
-                            int x = i + dirs[k], y = j + dirs[k + 1];
-                            if (x < 0 || x >= m || y < 0 || y >= n) 
-                                continue;
-                            if ((nxt & (1 << (x * n + y))) != 0) 
-                                nxt -= 1 << (x * n + y);
-                            else 
-                                nxt |= 1 << (x * n + y);
-                        }
-                        if (!vis.contains(nxt)) {
-                            vis.add(nxt);
-                            q.offer(nxt);
-                        }
-                    }
-                }
-            }
-            ++ans;
-        }
-        return -1;
+        return true;
+    }
+    public void flip(int[][] mat,int i,int j){
+        mat[i][j]^=1;
+        if(i>0) mat[i-1][j]^=1;
+        if(i<n-1) mat[i+1][j]^=1;
+        if(j>0) mat[i][j-1]^=1;
+        if(j<m-1) mat[i][j+1]^=1;
     }
 }
