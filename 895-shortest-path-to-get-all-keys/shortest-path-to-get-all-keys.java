@@ -1,50 +1,56 @@
 class Solution {
-    private int[] dirs = {-1, 0, 1, 0, -1};
+    private static final int[] DIRS = {1, 0, -1, 0, 1};
 
     public int shortestPathAllKeys(String[] grid) {
         int m = grid.length, n = grid[0].length();
-        int k = 0;
-        int si = 0, sj = 0;
-        for (int i = 0; i < m; ++i) {
-            for (int j = 0; j < n; ++j) {
-                char c = grid[i].charAt(j);
-                if (Character.isLowerCase(c)) 
-                    ++k;
-                else if (c == '@') {
-                    si = i;
-                    sj = j;
-                }
+        char[][] g = new char[m][];
+        for (int i = 0; i < m; i++) g[i] = grid[i].toCharArray();
+        int start = 0, k = 0;
+        for (int r = 0; r < m; r++) {
+            for (int c = 0; c < n; c++) {
+                char ch = g[r][c];
+                if (ch == '@') start = r * n + c;
+                else if (ch >= 'a' && ch <= 'f') k = Math.max(k, ch - 'a' + 1);
             }
         }
-        Deque<int[]> q = new ArrayDeque<>();
-        q.offer(new int[] {si, sj, 0});
-        boolean[][][] vis = new boolean[m][n][1 << k];
-        vis[si][sj][0] = true;
-        int ans = 0;
-        while (!q.isEmpty()) {
-            for (int t = q.size(); t > 0; --t) {
-                var p = q.poll();
-                int i = p[0], j = p[1], state = p[2];
-                if (state == (1 << k) - 1) 
-                    return ans;
-                for (int h = 0; h < 4; ++h) {
-                    int x = i + dirs[h], y = j + dirs[h + 1];
-                    if (x >= 0 && x < m && y >= 0 && y < n) {
-                        char c = grid[x].charAt(y);
-                        if (c == '#'
-                            || (Character.isUpperCase(c) && ((state >> (c - 'A')) & 1) == 0)) 
-                            continue;
-                        int nxt = state;
-                        if (Character.isLowerCase(c)) 
-                            nxt |= 1 << (c - 'a');
-                        if (!vis[x][y][nxt]) {
-                            vis[x][y][nxt] = true;
-                            q.offer(new int[] {x, y, nxt});
-                        }
+        int full = (1 << k) - 1;
+        if (full == 0) return 0;
+
+        int states = (m * n) << k;
+        boolean[] seen = new boolean[states];
+        int[] queue = new int[states];         
+        int head = 0, tail = 0;
+
+        int s0 = start << k;                    
+        seen[s0] = true;
+        queue[tail++] = s0;
+
+        for (int steps = 1; head < tail; steps++) {
+            int levelEnd = tail;                
+            while (head < levelEnd) {
+                int sid = queue[head++];
+                int cell = sid >>> k, mask = sid & full;
+                int r = cell / n, c = cell % n;
+
+                for (int d = 0; d < 4; d++) {
+                    int nr = r + DIRS[d], nc = c + DIRS[d + 1];
+                    if (nr < 0 || nr >= m || nc < 0 || nc >= n) continue;
+
+                    char ch = g[nr][nc];
+                    if (ch == '#') continue;
+                    if (ch >= 'A' && ch <= 'F' && (mask >> (ch - 'A') & 1) == 0) continue;
+
+                    int nmask = mask;
+                    if (ch >= 'a' && ch <= 'f') nmask |= 1 << (ch - 'a');
+                    if (nmask == full) return steps;
+
+                    int nsid = ((nr * n + nc) << k) | nmask;
+                    if (!seen[nsid]) {
+                        seen[nsid] = true;
+                        queue[tail++] = nsid;
                     }
                 }
             }
-            ++ans;
         }
         return -1;
     }
