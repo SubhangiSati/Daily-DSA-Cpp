@@ -1,35 +1,45 @@
 class Solution {
     public int minChanges(int[] nums, int k) {
-        int n = 1 << 10;
-        Map<Integer, Integer>[] count = new Map[k];
+
+        int n = nums.length;
+        int MAX = 1024;
+        int INF = 1_000_000_000;
+        int[][] freq = new int[k][MAX];
         int[] size = new int[k];
-        for (int i = 0; i < k; ++i) 
-            count[i] = new HashMap<>();
-        for (int i = 0; i < nums.length; ++i) {
-            count[i % k].put(nums[i], count[i % k].getOrDefault(nums[i], 0) + 1);
-            size[i % k]++;
+
+        for (int i = 0; i < n; i++) {
+            int group = i % k;
+            freq[group][nums[i]]++;
+            size[group]++;
         }
-        int[] f = new int[n];
-        Arrays.fill(f, 0x3f3f3f3f);
-        f[0] = 0;
-        for (int i = 0; i < k; ++i) {
-            int[] g = new int[n];
-            Arrays.fill(g, min(f) + size[i]);
-            for (int j = 0; j < n; ++j) {
-                for (var e : count[i].entrySet()) {
-                    int a = e.getKey(), b = e.getValue();
-                    g[j] = Math.min(g[j], f[j ^ a] + size[i] - b);
+        int[] dp = new int[MAX];
+        Arrays.fill(dp, INF);
+        dp[0] = 0;
+        for (int group = 0; group < k; group++) {
+            int[] next = new int[MAX];
+            int minPrevious = INF;
+            for (int x : dp)
+                minPrevious = Math.min(minPrevious, x);
+            Arrays.fill(
+                    next,
+                    minPrevious + size[group]);
+
+            for (int value = 0; value < MAX; value++) {
+                int count = freq[group][value];
+                if (count == 0)
+                    continue;
+                int changeCost = size[group] - count;
+                for (int xor = 0; xor < MAX; xor++) {
+                    if (dp[xor] == INF)
+                        continue;
+                    int newXor = xor ^ value;
+                    next[newXor] = Math.min(
+                            next[newXor],
+                            dp[xor] + changeCost);
                 }
             }
-            f = g;
+            dp = next;
         }
-        return f[0];
-    }
-
-    private int min(int[] arr) {
-        int min = arr[0];
-        for (int i : arr) 
-            min = Math.min(min, i);
-        return min;
+        return dp[0];
     }
 }
