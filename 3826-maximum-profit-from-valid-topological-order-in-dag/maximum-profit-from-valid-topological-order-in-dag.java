@@ -20,7 +20,7 @@ class Solution {
         if ((mask >> i & 1) == 1)
           continue;
         if ((mask & need[i]) == need[i]) {
-          final int newMask = mask | 1 << i; 
+          final int newMask = mask | 1 << i;
           dp[newMask] = Math.max(dp[newMask], dp[mask] + score[i] * position);
         }
       }
