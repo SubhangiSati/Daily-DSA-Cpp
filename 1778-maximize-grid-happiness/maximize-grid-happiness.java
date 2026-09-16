@@ -1,49 +1,58 @@
 class Solution {
-    public int getMaxGridHappiness(int m, int n, int introvertsCount, int extrovertsCount) {
-        final int twoToThePowerOfN = (int) Math.pow(2, n);
-        int[][][][][] mem = new int[m * n][twoToThePowerOfN][twoToThePowerOfN][introvertsCount + 1][extrovertsCount
-                + 1];
-        return getMaxGridHappiness(m, n, 0, 0, 0, introvertsCount, extrovertsCount, mem);
-    }
-
-    private int getPlacementCost(int n, int i, int j, int inMask, int exMask, int diff) {
-        int cost = 0;
-        if (i > 0) {
-            if (((1 << (n - 1)) & inMask) > 0)
-                cost += diff - 30;
-            if (((1 << (n - 1)) & exMask) > 0)
-                cost += diff + 20;
+    private int m, n;
+    private int totalCells;
+    private int maxMask;
+    private int topPower;
+    private int[][][][] memo;
+    private final int[][] pairScore = {
+        {0, 0, 0},
+        {0, -60, -10},
+        {0, -10, 40}
+    };
+    public int getMaxGridHappiness(
+        int m, int n, int introvertsCount, int extrovertsCount) {
+        if (m < n) {
+            int temp = m;
+            m = n;
+            n = temp;
         }
-        if (j > 0) {
-            if ((1 & inMask) > 0)
-                cost += diff - 30;
-            if ((1 & exMask) > 0)
-                cost += diff + 20;
+        this.m = m;
+        this.n = n;
+        this.totalCells = m * n;
+        maxMask = 1;
+        for (int i = 0; i < n; i++) 
+            maxMask *= 3;
+        topPower = 1;
+        for (int i = 1; i < n; i++) 
+            topPower *= 3;
+        memo = new int[totalCells][introvertsCount + 1][extrovertsCount + 1][maxMask];
+        for (int pos = 0; pos < totalCells; pos++) {
+            for (int intro = 0; intro <= introvertsCount; intro++) {
+                for (int extro = 0; extro <= extrovertsCount; extro++) 
+                    Arrays.fill(memo[pos][intro][extro], -1);
+            }
         }
-        return cost;
+        return dfs(0, introvertsCount, extrovertsCount, 0);
     }
-
-    private int getMaxGridHappiness(int m, int n, int pos, int inMask, int exMask, int inCount,
-            int exCount, int[][][][][] mem) {
-        final int i = pos / n;
-        final int j = pos % n;
-        if (i == m)
-            return 0;
-        if (mem[pos][inMask][exMask][inCount][exCount] > 0)
-            return mem[pos][inMask][exMask][inCount][exCount];
-
-        final int shiftedInMask = (inMask << 1) & ((1 << n) - 1);
-        final int shiftedExMask = (exMask << 1) & ((1 << n) - 1);
-
-        final int skip = getMaxGridHappiness(m, n, pos + 1, shiftedInMask, shiftedExMask, inCount, exCount, mem);
-        final int placeIntrovert = inCount > 0 ? 120 + getPlacementCost(n, i, j, inMask, exMask, -30) +
-                getMaxGridHappiness(m, n, pos + 1, shiftedInMask | 1, shiftedExMask,
-                        inCount - 1, exCount, mem)
-                : Integer.MIN_VALUE;
-        final int placeExtrovert = exCount > 0 ? 40 + getPlacementCost(n, i, j, inMask, exMask, 20) +
-                getMaxGridHappiness(m, n, pos + 1, shiftedInMask, shiftedExMask | 1,
-                        inCount, exCount - 1, mem)
-                : Integer.MIN_VALUE;
-        return mem[pos][inMask][exMask][inCount][exCount] = Math.max(skip, Math.max(placeIntrovert, placeExtrovert));
+    private int dfs(int pos, int introLeft, int extroLeft, int mask) {
+        if (pos == totalCells) return 0;
+        if (memo[pos][introLeft][extroLeft][mask] != -1) return memo[pos][introLeft][extroLeft][mask];
+        int col = pos % n;
+        int top = mask / topPower;
+        int left = (col == 0) ? 0 : mask % 3;
+        int shiftedMask = (mask % topPower) * 3;
+        int best = dfs(pos + 1, introLeft, extroLeft, shiftedMask);
+        if (introLeft > 0) {
+            int gain = 120 + pairScore[1][top] + pairScore[1][left];
+            best = Math.max(best, gain + dfs(pos + 1, introLeft - 1, extroLeft, shiftedMask + 1)
+            );
+        }
+        if (extroLeft > 0) {
+            int gain = 40 + pairScore[2][top] + pairScore[2][left];
+            best = Math.max( best, gain + dfs(pos + 1, introLeft, extroLeft - 1, shiftedMask + 2)
+            );
+        }
+        memo[pos][introLeft][extroLeft][mask] = best;
+        return best;
     }
 }
