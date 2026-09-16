@@ -1,31 +1,35 @@
 class Solution {
-  public int maxProfit(int n, int[][] edges, int[] score) {
-    final int maxMask = 1 << n;
-    int[] need = new int[n];
-    int[] dp = new int[maxMask];
-    Arrays.fill(dp, -1);
-    dp[0] = 0;
+    public int maxProfit(int n, int[][] edges, int[] score) {
 
-    for (int[] edge : edges) {
-      final int u = edge[0];
-      final int v = edge[1];
-      need[v] |= 1 << u;
-    }
-
-    for (int mask = 0; mask < maxMask; ++mask) {
-      if (dp[mask] == -1)
-        continue;
-      int position = Integer.bitCount(mask) + 1;
-      for (int i = 0; i < n; ++i) {
-        if ((mask >> i & 1) == 1)
-          continue;
-        if ((mask & need[i]) == need[i]) {
-          final int newMask = mask | 1 << i;
-          dp[newMask] = Math.max(dp[newMask], dp[mask] + score[i] * position);
+        int[] need = new int[n];
+        for (int i = 0; i < edges.length; i++) {
+            int s = edges[i][0];
+            int d = edges[i][1];
+            need[d] |= 1 << s;
         }
-      }
-    }
 
-    return dp[maxMask - 1];
-  }
+        int[] dp = new int[1 << n];
+
+        Arrays.fill(dp, -1);
+        dp[0] = 0;
+
+        for (int mask = 0; mask < (1 << n); mask++) {
+
+            if (dp[mask] == -1)
+                continue;
+            int rank = Integer.bitCount(mask) + 1;
+            for (int i = 0; i < n; i++) {
+                if ((mask >> i & 1) == 0 && (need[i] & mask) == need[i]) {
+
+                    int mask2 = mask | (1 << i);
+
+                    dp[mask2] = Math.max(dp[mask2], dp[mask] + rank * score[i]);
+
+                }
+            }
+        }
+
+        return dp[(1 << n) - 1];
+
+    }
 }
