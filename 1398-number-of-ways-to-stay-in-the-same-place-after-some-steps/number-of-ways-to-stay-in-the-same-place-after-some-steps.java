@@ -1,23 +1,19 @@
 class Solution {
-    private Integer[][] f;
-    private int n;
-    public int numWays(int steps, int arrLen) {
-        f = new Integer[steps][steps + 1];
-        n = arrLen;
-        return dfs(0, steps);
-    }
-
-    private int dfs(int i, int j) {
-        if (i > j || i >= n || i < 0 || j < 0) 
-            return 0;
-        if (i == 0 && j == 0) 
-            return 1;
-        if (f[i][j] != null) 
-            return f[i][j];
-        int ans = 0;
-        final int mod = (int) 1e9 + 7;
-        for (int k = -1; k <= 1; ++k) 
-            ans = (ans + dfs(i + k, j - 1)) % mod;
-        return f[i][j] = ans;
+    public int numWays(int steps, int len) {
+        int maxPosition = Math.min(steps / 2 + 1, len);
+        int[] currWays = new int[maxPosition + 2];
+        int[] nextWays = new int[maxPosition + 2];
+        currWays[1] = 1;
+        int mod = 1000000007;
+        while (steps > 0) {
+            for (int pos = 1; pos <= maxPosition; pos++) {
+                nextWays[pos] = (int) (((long) currWays[pos] + currWays[pos - 1] + currWays[pos + 1]) % mod);
+            }
+            int[] temp = currWays;
+            currWays = nextWays;
+            nextWays = temp;
+            steps--;
+        }
+        return currWays[1];
     }
 }
