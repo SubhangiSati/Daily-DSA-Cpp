@@ -1,36 +1,70 @@
-class Solution {
+public class Solution {
+    private static final int k = 6, p = 1_000_000_007;
+
     public int distinctSequences(int n) {
-        if (n == 1)
-            return 6;
-        int mod = (int) 1e9 + 7;
-        int[][][] dp = new int[n + 1][6][6];
-        for (int i = 0; i < 6; ++i) {
-            for (int j = 0; j < 6; ++j) {
-                if (gcd(i + 1, j + 1) == 1 && i != j)
-                    dp[2][i][j] = 1;
-            }
-        }
-        for (int k = 3; k <= n; ++k) {
-            for (int i = 0; i < 6; ++i) {
-                for (int j = 0; j < 6; ++j) {
-                    if (gcd(i + 1, j + 1) == 1 && i != j) {
-                        for (int h = 0; h < 6; ++h) {
-                            if (gcd(h + 1, i + 1) == 1 && h != i && h != j)
-                                dp[k][i][j] = (dp[k][i][j] + dp[k - 1][h][i]) % mod;
-                        }
-                    }
+        if (n == 1) return 6;
+        int counter = 0;
+        Map<Pair, Integer> map = new HashMap<>();
+        for (int i = 1; i < k; i++) {
+            for (int j = i + 1; j <= k; j++) {
+                if ((i % 2 != 0 || j % 2 != 0) && (i % 3 != 0 || j % 3 != 0)) {
+                    map.put(new Pair(i, j), counter++);
+                    map.put(new Pair(j, i), counter++);
                 }
             }
         }
+        if (n == 2) return counter;
+        long[][] matrix = new long[counter][counter];
+        for (Map.Entry<Pair, Integer> entry : map.entrySet()) {
+            int a = entry.getKey().x, b = entry.getKey().y;
+            for (int c = 1; c <= k; c++) {
+                if (a == c || b == c || b % 2 == 0 && c % 2 == 0 || b % 3 == 0 && c % 3 == 0) continue;
+                matrix[map.get(new Pair(b, c))][entry.getValue()] = 1;
+            }
+        }
+        long[][] power = matrixPower(matrix, n - 2);
         int ans = 0;
-        for (int i = 0; i < 6; ++i) {
-            for (int j = 0; j < 6; ++j)
-                ans = (ans + dp[n][i][j]) % mod;
+        for (long[] row : power) {
+            for (long a : row) {
+                ans += a;
+                if (ans >= p) ans -= p;
+            }
         }
         return ans;
     }
 
-    private int gcd(int a, int b) {
-        return b == 0 ? a : gcd(b, a % b);
+    private record Pair(int x, int y) {
+    }
+
+    private static long[][] matrixPower(long[][] base, long pow) {
+        int n = base.length;
+        long[][] res = new long[n][n];
+        for (int i = 0; i < n; i++) {
+            res[i][i] = 1;
+        }
+        while (pow != 0) {
+            if ((pow & 1) != 0) {
+                res = multiplyMatrix(res, base);
+                --pow;
+            } else {
+                base = multiplyMatrix(base, base);
+                pow >>= 1;
+            }
+        }
+        return res;
+    }
+
+    private static long[][] multiplyMatrix(long[][] a, long[][] b) {
+        int n = a.length;
+        long[][] ans = new long[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                for (int k = 0; k < n; k++) {
+                    ans[i][j] += a[i][k] * b[k][j];
+                    if (ans[i][j] >= p) ans[i][j] %= p; 
+                }
+            }
+        }
+        return ans;
     }
 }
