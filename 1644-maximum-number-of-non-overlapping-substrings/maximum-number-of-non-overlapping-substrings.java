@@ -1,42 +1,52 @@
 class Solution {
     public List<String> maxNumOfSubstrings(String s) {
         int n = s.length();
-        int[][] intervals = new int[26][2];
-        for (int i = 0; i < 26; i++) 
-            intervals[i][0] = n;
+        int[] first = new int[26];
+        int[] last = new int[26];
+        Arrays.fill(first, -1);
+        Arrays.fill(last, -1);
+
         for (int i = 0; i < n; i++) {
-            char c = s.charAt(i);
-            intervals[c - 'a'][0] = Math.min(intervals[c - 'a'][0], i);
-            intervals[c - 'a'][1] = Math.max(intervals[c - 'a'][1], i);
+            int charIdx = s.charAt(i) - 'a';
+            if (first[charIdx] == -1) {
+                first[charIdx] = i;
+            }
+
+            last[charIdx] = i;
         }
-        List<int[]> list = new ArrayList<>();
+
+        List<int[]> validIntervals = new ArrayList<>();
         for (int i = 0; i < 26; i++) {
-            if (intervals[i][0] < n) {
-                int left = intervals[i][0], right = intervals[i][1];
-                int minLeft = left, maxRight = right;
-                for (int j = minLeft; j <= maxRight; j++) { 
-                    minLeft = Math.min(minLeft, intervals[s.charAt(j) - 'a'][0]);
-                    maxRight = Math.max(maxRight, intervals[s.charAt(j) - 'a'][1]);
+            if (first[i] == -1)
+                continue;
+            int start = first[i];
+            int end = last[i];
+            boolean isValid = true;
+
+            for (int j = start; j <= end; j++) {
+                int currChar = s.charAt(j) - 'a';
+                if (first[currChar] < start) {
+                    isValid = false;
+                    break;
                 }
-                if (minLeft == left) 
-                    list.add(new int[] { minLeft,maxRight });
+                end = Math.max(end, last[currChar]);
             }
+            if (isValid) 
+                validIntervals.add(new int[] { start, end });
         }
 
-        Collections.sort(list, (a, b) -> a[1] == b[1] ? a[0] - b[0] : a[1] - b[1]);
+        validIntervals.sort((a, b) -> Integer.compare(a[1], b[1]));
+
+        int prevIdx = -1;
         List<String> ans = new ArrayList<>();
-        int prevEnd = -1;
-        if (list.isEmpty()) {
-            ans.add(s);
-        } else {
-            for (int[] interval : list) {
-                if (interval[0] > prevEnd) {
-                    ans.add(s.substring(interval[0], interval[1] + 1));
-                    prevEnd = interval[1];
-                }
+        for (int[] interval : validIntervals) {
+            int start = interval[0];
+            int end = interval[1];
+            if (start > prevIdx) {
+                ans.add(s.substring(start, end + 1));
+                prevIdx = end;
             }
         }
-
         return ans;
     }
 }
