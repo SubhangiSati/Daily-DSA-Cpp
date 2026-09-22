@@ -1,111 +1,98 @@
+class SegmentTree {
+    private static final int MAXK = 6;
+    private int k;
+    private int n;
+    private int[][] tree;
+    public SegmentTree(int[] nums, int k) {
+        this.k = k;
+        this.n = nums.length;
+        int size = 2 << Integer.toBinaryString(n).length();
+        tree = new int[size][MAXK];
+        build(nums, 1, 0, n - 1);
+    }
+
+    private void makeLeaf(int o, int value) {
+        Arrays.fill(tree[o], 0);
+        int r = value % k;
+        tree[o][r] = 1;
+        tree[o][k] = r;
+    }
+
+    private void mergePre(int[] left, int[] right, int[] result) {
+        int mulL = left[k];
+        int mulR = right[k];
+        result[k] = (mulL * mulR) % k;
+
+        for (int x = 0; x < k; x++) 
+            result[x] = left[x];
+        for (int x = 0; x < k; x++) 
+            result[(mulL * x) % k] += right[x];
+    }
+
+    private void maintain(int o) {
+        mergePre(tree[o * 2], tree[o * 2 + 1], tree[o]);
+    }
+
+    private void build(int[] nums, int o, int l, int r) {
+        if (l == r) {
+            makeLeaf(o, nums[l]);
+            return;
+        }
+        int m = (l + r) / 2;
+        build(nums, o * 2, l, m);
+        build(nums, o * 2 + 1, m + 1, r);
+        maintain(o);
+    }
+
+    public void update(int o, int l, int r, int index, int value) {
+        if (l == r) {
+            makeLeaf(o, value);
+            return;
+        }
+        int m = (l + r) / 2;
+        if (index <= m) 
+            update(o * 2, l, m, index, value);
+        else 
+            update(o * 2 + 1, m + 1, r, index, value);
+        maintain(o);
+    }
+
+    public int[] query(int o, int l, int r, int L, int R) {
+        if (L <= l && r <= R) 
+            return tree[o];
+
+        int m = (l + r) / 2;
+        if (R <= m) 
+            return query(o * 2, l, m, L, R);
+        if (L > m) 
+            return query(o * 2 + 1, m + 1, r, L, R);
+
+        int[] left = query(o * 2, l, m, L, R);
+        int[] right = query(o * 2 + 1, m + 1, r, L, R);
+        int[] result = new int[MAXK];
+        mergePre(left, right, result);
+        return result;
+    }
+}
+
 class Solution {
-    static class Node {
-        int[] remain;
-        int prod = 1;
-
-        Node(int k) {
-            remain = new int[k];
-        }
-    }
-
-    static class SegmentTree {
-        private final int n;
-        private final int k;
-        private final Node[] tree;
-
-        SegmentTree(int[] nums, int k) {
-            this.n = nums.length;
-            this.k = k;
-            this.tree = new Node[4 * n];
-
-            build(nums, 0, 0, n - 1);
-        }
-
-        void update(int i, int val) {
-            update(0, 0, n - 1, i, val);
-        }
-
-        Node query(int i, int j) {
-            return query(0, 0, n - 1, i, j);
-        }
-
-        private void build(int[] nums, int cur, int left, int right) {
-            if (left == right) {
-                tree[cur] = new Node(k);
-                tree[cur].remain[nums[left]] = 1;
-                tree[cur].prod = nums[left];
-                return;
-            }
-            int mid = (left + right) / 2;
-            build(nums, 2 * cur + 1, left, mid);
-            build(nums, 2 * cur + 2, mid + 1, right);
-            tree[cur] = merge(
-                    tree[2 * cur + 1],
-                    tree[2 * cur + 2]);
-        }
-
-        private void update(int treeIndex, int lo, int hi,
-                int i, int val) {
-            if (lo == hi) {
-                tree[treeIndex] = new Node(k);
-                tree[treeIndex].remain[val] = 1;
-                tree[treeIndex].prod = val;
-                return;
-            }
-            int mid = (lo + hi) / 2;
-
-            if (i <= mid)
-                update(2 * treeIndex + 1, lo, mid, i, val);
-            else
-                update(2 * treeIndex + 2, mid + 1, hi, i, val);
-
-            tree[treeIndex] = merge(
-                    tree[2 * treeIndex + 1],
-                    tree[2 * treeIndex + 2]);
-        }
-
-        private Node query(int treeIndex, int lo, int hi,
-                int i, int j) {
-            if (i <= lo && hi <= j)
-                return tree[treeIndex];
-            if (j < lo || hi < i)
-                return new Node(k);
-            int mid = (lo + hi) / 2;
-            return merge(
-                    query(2 * treeIndex + 1, lo, mid, i, j),
-                    query(2 * treeIndex + 2, mid + 1, hi, i, j));
-        }
-
-        private Node merge(Node left, Node right) {
-            Node node = new Node(k);
-            node.prod = (left.prod * right.prod) % k;
-            for (int i = 0; i < k; i++)
-                node.remain[i] = left.remain[i];
-            for (int i = 0; i < k; i++) {
-                int index = (i * left.prod) % k;
-                node.remain[index] += right.remain[i];
-            }
-            return node;
-        }
-    }
-
     public int[] resultArray(int[] nums, int k, int[][] queries) {
-        for (int i = 0; i < nums.length; i++)
-            nums[i] %= k;
-        for (int[] query : queries)
-            query[1] %= k;
         int n = nums.length;
+        SegmentTree seg = new SegmentTree(nums, k);
         int[] ans = new int[queries.length];
-        SegmentTree tree = new SegmentTree(nums, k);
-        for (int q = 0; q < queries.length; q++) {
-            int[] query = queries[q];
-            int index = query[0];
-            int value = query[1];
-            int start = query[2];
-            int x = query[3];
-            tree.update(index, value);
-            ans[q] = tree.query(start, n - 1).remain[x];
+
+        for (int i = 0; i < queries.length; i++) {
+            int[] q = queries[i];
+            int index = q[0];
+            int value = q[1];
+            int start = q[2];
+            int x = q[3];
+
+            seg.update(1, 0, n - 1, index, value);
+            int[] pre = seg.query(1, 0, n - 1, start, n - 1);
+            ans[i] = pre[x];
         }
+
         return ans;
     }
 }
