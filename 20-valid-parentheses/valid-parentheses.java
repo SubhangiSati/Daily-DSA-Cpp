@@ -1,16 +1,21 @@
 class Solution {
     public boolean isValid(String s) {
-        Deque<Character> stk = new ArrayDeque<>();
-        Map<Character, Character> d = new HashMap<>(3);
-        d.put('(', ')');
-        d.put('[', ']');
-        d.put('{', '}');
+        if (s.length() % 2 != 0)
+            return false;
+        char[] stack = new char[s.length()];
+        int head = 0;
         for (char c : s.toCharArray()) {
-            if (d.containsKey(c)) 
-                stk.push(d.get(c));
-            else if (stk.isEmpty() || stk.pop() != c) 
-                return false;
+            if (c == '(') 
+                stack[head++] = ')';
+            else if (c == '{') 
+                stack[head++] = '}';
+            else if (c == '[') 
+                stack[head++] = ']';
+            else {
+                if (head == 0 || stack[--head] != c) 
+                    return false;
+            }
         }
-        return stk.isEmpty();
+        return head == 0;
     }
 }
