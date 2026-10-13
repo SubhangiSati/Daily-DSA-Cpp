@@ -1,42 +1,52 @@
 class Solution {
-    public int numOfWays(int[] nums) {
-        comb = generate(nums.length + 1);
-        return ways(Arrays.stream(nums).boxed().collect(Collectors.toList())) - 1;
-    }
-
     private static final int MOD = 1_000_000_007;
-    private List<List<Integer>> comb;
-    private int ways(List<Integer> nums) {
-        if (nums.size() <= 2)
-            return 1;
 
-        List<Integer> left = new ArrayList<>();
-        List<Integer> right = new ArrayList<>();
+    public int numOfWays(int[] nums) {
+        int n = nums.length;
+        int[] prev = new int[n + 2];
+        int[] next = new int[n + 2];
+        int[] size = new int[n + 2];
+        for (int i = 0; i < n + 2; i++) {
+            prev[i] = i - 1;
+            next[i] = i + 1;
+        }
+        long fac = 1; 
+        long prod = 1;
 
-        for (int i = 1; i < nums.size(); ++i)
-            if (nums.get(i) < nums.get(0))
-                left.add(nums.get(i));
-            else
-                right.add(nums.get(i));
+        for (int i = n - 1; i >= 0; i--) {
+            fac = fac * (i + 1) % MOD;
 
-        long answer = comb.get(nums.size() - 1).get(left.size());
-        answer = (answer * ways(left)) % MOD;
-        answer = (answer * ways(right)) % MOD;
-        return (int) answer;
-    }
-    public List<List<Integer>> generate(int numRows) {
-        List<List<Integer>> comb = new ArrayList<>();
+            int x = nums[i];
+            size[x] = 1;
+            int left = prev[x];
+            if (size[left] > 0) {
+                size[x] += size[left];
+                int pl = prev[left];
+                prev[x] = pl;
+                next[pl] = x;
+            }
 
-        for (int i = 0; i < numRows; ++i) {
-            Integer[] temp = new Integer[i + 1];
-            Arrays.fill(temp, 1);
-            comb.add(Arrays.asList(temp));
+            int right = next[x];
+            if (size[right] > 0) {
+                size[x] += size[right];
+                int nr = next[right];
+                prev[nr] = x;
+                next[x] = nr;
+            }
+
+            prod = prod * size[x] % MOD;
         }
 
-        for (int i = 2; i < numRows; ++i)
-            for (int j = 1; j < comb.get(i).size() - 1; ++j)
-                comb.get(i).set(j, (comb.get(i - 1).get(j - 1) + comb.get(i - 1).get(j)) % MOD);
+        return (int) ((fac * pow(prod, MOD - 2) - 1 + MOD) % MOD);
+    }
 
-        return comb;
+    private long pow(long x, int n) {
+        long res = 1;
+        for (; n > 0; n /= 2) {
+            if (n % 2 > 0) 
+                res = res * x % MOD;
+            x = x * x % MOD;
+        }
+        return res;
     }
 }
