@@ -1,24 +1,27 @@
 class Solution {
     public boolean checkPartitioning(String s) {
-        final int n = s.length();
-        Boolean[][] memory = new Boolean[n][n];
+        int n = s.length();
+        boolean[][] isPalindrome = new boolean[n][n];
 
-        for (int i = 0; i < n; ++i)
-            for (int j = i + 1; j + 1 < n; ++j)
-                if (isPalindrome(s, 0, i, memory) && 
-                        isPalindrome(s, i + 1, j, memory) && 
-                        isPalindrome(s, j + 1, n - 1, memory))
+        for(int i = 0; i < n; i++){
+            for(int p = 0; p < 2; p++){
+                int left = i;
+                int right = i + p;
+                while(left >= 0 && right<n && s.charAt(left)==s.charAt(right)){
+                    isPalindrome[left][right]=true;
+                    left--;
+                    right++;
+                }
+            }
+        }
+
+        for(int i = 0; i < n-2; i++){
+            for(int j = i + 1; j< n-1; j++){
+                if(isPalindrome[0][i] && isPalindrome[i + 1][j] && isPalindrome[j + 1][n - 1])
                     return true;
+            }
+        }
 
         return false;
-    }
-    private boolean isPalindrome(final String s, int i, int j, Boolean[][] memory) {
-        if (i > j)
-            return true;
-        if (memory[i][j] != null)
-            return memory[i][j];
-        if (s.charAt(i) == s.charAt(j))
-            return memory[i][j] = isPalindrome(s, i + 1, j - 1, memory);
-        return memory[i][j] = false;
     }
 }
