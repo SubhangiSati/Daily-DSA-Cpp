@@ -1,95 +1,54 @@
-class Solution {
-    private static final int MOD = 1_000_000_007;
+public class Solution {
+    private static final int MOD = (int) (1e9) + 7;
+    private int n;
+    private long[] tree1;
+    private long[] tree2;
 
-    class LazySegmentTree {
-        int n;
-        long[] lazy;
-        long[] sums;
-        long[] squaredSums;
-
-        LazySegmentTree(int n) {
-            this.n = n;
-            lazy = new long[4 * n];
-            sums = new long[4 * n];
-            squaredSums = new long[4 * n];
-        }
-
-        void updateRange(int l, int r) {
-            updateRange(0, 0, n - 1, l, r);
-        }
-
-        void propagate(int i, int l, int r) {
-            long gap = r - l + 1;
-            long val = lazy[i];
-
-            // Update sum of squares:
-            // (a + val)^2 + (b + val)^2 + ...
-            squaredSums[i] = (squaredSums[i]
-                    + 2L * val * sums[i] % MOD
-                    + val * val % MOD * gap % MOD) % MOD;
-
-            // Update sum:
-            sums[i] = (sums[i] + val * gap) % MOD;
-
-            if (l < r) {
-                lazy[i * 2 + 1] = (lazy[i * 2 + 1] + val) % MOD;
-                lazy[i * 2 + 2] = (lazy[i * 2 + 2] + val) % MOD;
+    public int sumCounts(int[] nums) {
+        n = nums.length;
+        tree1 = new long[n + 1];
+        tree2 = new long[n + 1];
+        int max = 0;
+        for (int x : nums) {
+            if (x > max) {
+                max = x;
             }
-
-            lazy[i] = 0;
         }
-
-        long getTreeSquaredSums() {
-            return squaredSums[0];
+        int[] last = new int[max + 1];
+        long ans = 0;
+        long cur = 0;
+        for (int i = 1; i <= n; i++) {
+            int x = nums[i - 1];
+            int j = last[x];
+            cur += 2 * (query(i) - query(j)) + (i - j);
+            ans += cur;
+            update(j + 1, 1);
+            update(i + 1, -1);
+            last[x] = i;
         }
+        return (int) (ans % MOD);
+    }
 
-        private void updateRange(
-                int i, int start, int end, int l, int r) {
+    int lowbit(int index) {
+        return index & (-index);
+    }
 
-            if (lazy[i] > 0) {
-                propagate(i, start, end);
-            }
-
-            if (end < l || start > r) {
-                return;
-            }
-
-            if (start >= l && end <= r) {
-                lazy[i] = 1;
-                propagate(i, start, end);
-                return;
-            }
-
-            int mid = start + (end - start) / 2;
-
-            updateRange(i * 2 + 1, start, mid, l, r);
-            updateRange(i * 2 + 2, mid + 1, end, l, r);
-
-            sums[i] = (sums[i * 2 + 1] + sums[i * 2 + 2]) % MOD;
-
-            squaredSums[i] = (squaredSums[i * 2 + 1]
-                    + squaredSums[i * 2 + 2]) % MOD;
+    void update(int index, int x) {
+        int v = index * x;
+        while (index <= n) {
+            tree1[index] += x;
+            tree2[index] += v;
+            index += lowbit(index);
         }
     }
 
-    public int sumCounts(int[] nums) {
-        int n = nums.length;
+    long query(int index) {
         long ans = 0;
-
-        Map<Integer, Integer> lastSeen = new HashMap<>();
-        LazySegmentTree tree = new LazySegmentTree(n);
-
-        for (int r = 0; r < n; r++) {
-            int l = lastSeen.containsKey(nums[r])
-                    ? lastSeen.get(nums[r]) + 1
-                    : 0;
-
-            tree.updateRange(l, r);
-            lastSeen.put(nums[r], r);
-
-            ans = (ans + tree.getTreeSquaredSums()) % MOD;
+        int p = index + 1;
+        while (index > 0) {
+            ans += p * tree1[index] - tree2[index];
+            index -= lowbit(index);
         }
-
-        return (int) ans;
+        return ans;
     }
 }
